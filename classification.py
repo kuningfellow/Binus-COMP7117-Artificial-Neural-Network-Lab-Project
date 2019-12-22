@@ -1,5 +1,8 @@
 import pandas as pd
 import tensorflow as tf
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from sklearn.model_selection import train_test_split
+import numpy as np
 
 class ANN:
     """
@@ -9,7 +12,6 @@ class ANN:
 
     activations = list of strings indicating the activation function to be used on each layer    
     """
-
     def __init__(self, layers, activations):
         super().__init__()
 
@@ -71,8 +73,11 @@ class DataSet:
     """
     def __init__(self):
         super().__init__()
-    
+
     def getData(self, path):
+        """
+        Obtains dataset as object attribute and performs normalization
+        """
         self.data = pd.read_csv(path)
         self.in_data = self.data[[
             "hair",
@@ -83,11 +88,26 @@ class DataSet:
             "backbone",
             "breathes",
             "fins",
-            "legs",
+            # "legs",   I don't think this is ordinal
             "tail",
             "domestic",
             "catsize"
         ]]
-        self.out_data = self.data[[
-            "class_type"
-        ]]
+        # in_data is boolean, so no need for normalizing
+
+        # Encode legs column
+        # Use OneHotEncoder because leg count has no ordinal relationship in determining an animal class
+        self.in_data = np.column_stack(( self.in_data , OneHotEncoder(sparse=False).fit_transform( self.data[['legs']] ) ))
+
+        # OneHotEncoder because animal classes has no ordinal relationship between one another
+        self.out_data = OneHotEncoder(sparse=False).fit_transform( self.data[['class_type']] )
+
+    def splitData(self):
+        """
+        Splits data according to project the requirement
+        """
+        # Use 70% of dataset as train data. Use remaining dataset as test data
+        self.train_in_data, self.test_in_data, self.train_out_data, self.test_out_data = train_test_split(self.in_data, self.out_data, train_size=0.7)
+
+        # Use 20% of train data as validation. Use the remaining as actual training data
+        self.train_in_data, self.validation_in_data, self.train_out_data, self.validation_out_data = train_test_split(self.train_in_data, self.train_out_data, test_size=0.2)
