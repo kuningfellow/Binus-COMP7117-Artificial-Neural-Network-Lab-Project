@@ -88,8 +88,8 @@ def get_processed_data(path_file):
 
 if __name__ == "__main__":
     in_data = get_processed_data("dataset/clustering.csv")
-    width = 3
-    height = 3
+    width = 5
+    height = 5
     input_dim = 3
     epoch = 5000
     som = SOM(width, height, input_dim)
