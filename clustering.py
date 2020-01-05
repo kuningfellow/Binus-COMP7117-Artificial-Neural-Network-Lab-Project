@@ -4,7 +4,14 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import numpy as np
+"""
+Kohonen Self Organizing Map
+"""
 class SOM:
+    """
+    creates a Self Organizing Map (SOM) with 2D amount of nodes, the width and height, height is also used for number of cluster.
+    The map is used for each attribute of the input_dimension.
+    """
     def __init__(self, width, height, input_dim):
         # initialize variables
         self.width = width
@@ -14,20 +21,21 @@ class SOM:
         self.weight = tf.Variable(tf.random_normal([self.num_node, self.input_dim]))
         self.input = tf.placeholder(tf.float32, [self.input_dim])
         self.location = [ tf.to_float([y, x]) for y in range(height) for x in range(width) ]
-
-        # Find best matching unit
-        bmu = self.get_bmu()
-
+        bmu = None;
         # Update its neightbors' weights
-        self.update_weight = self.update_neighbor(bmu)
+        self.update_weight = self.update_neighbor(bmu=self.get_bmu())
 
     def get_bmu(self):
+        # Finding the nearest distance with input
         distance = self.get_distance(self.input, self.weight)
         bmu_index = tf.argmin(distance)
+
+        # Cast bmu_location
         bmu_location = tf.to_float([tf.div(bmu_index, self.width), tf.mod(bmu_index, self.width)])
         return bmu_location
 
     def update_neighbor(self, bmu):
+
         sigma = tf.to_float(tf.maximum(self.height, self.width) / 2)
         distance = self.get_distance(self.location, bmu)
 
@@ -35,7 +43,7 @@ class SOM:
         ns = tf.exp( tf.div(tf.negative(tf.square(distance)), 2 * tf.square(sigma)))
 
         # Learning Rate
-        lr = 0.1
+        lr = 0.05
         curr_lr = ns * lr
 
         stacked_lr = tf.stack( [ tf.tile(tf.slice(curr_lr, [i], [1]), [self.input_dim]) for i in range(self.num_node) ] )
@@ -88,13 +96,16 @@ def get_processed_data(path_file):
 
 if __name__ == "__main__":
     in_data = get_processed_data("dataset/clustering.csv")
-    width = 3
-    height = 3
+    
+    width = 9
+    height = 9
     input_dim = 3
     epoch = 5000
+    
     som = SOM(width, height, input_dim)
     som.train(in_data, epoch)
-    
+
     plt.imshow(som.cluster)
+    # plt.colorbar()
     plt.show()
     pass
