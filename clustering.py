@@ -58,6 +58,7 @@ class SOM:
         return tf.assign(self.weight, new_weight)
 
     def get_distance(self, node_a, node_b):
+        #Euclidean Distance
         squared_diff = tf.square(node_a - node_b)
         total_squared_diff = tf.reduce_sum(squared_diff, axis=1)
         return tf.sqrt(total_squared_diff)
@@ -94,6 +95,9 @@ def get_processed_data(path_file):
     data = MinMaxScaler().fit_transform(data)
     return PCA(n_components=3).fit_transform(data)
 
+"""
+for local testing
+"""
 if __name__ == "__main__":
     in_data = get_processed_data("dataset/clustering.csv")
     
@@ -104,8 +108,8 @@ if __name__ == "__main__":
     
     som = SOM(width, height, input_dim)
     som.train(in_data, epoch)
-
+    print(som.cluster);
     plt.imshow(som.cluster)
-    # plt.colorbar()
+    plt.colorbar()
     plt.show()
     pass
