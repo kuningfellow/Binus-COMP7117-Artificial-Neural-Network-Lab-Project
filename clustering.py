@@ -76,7 +76,7 @@ class SOM:
             location = sess.run(self.location)
             weight = sess.run(self.weight)
             for i, loc in enumerate(location):
-                cluster[int(loc[0])] = weight[i]
+                cluster[int(loc[0])].append(weight[i])
             self.cluster = cluster
     
 """
@@ -108,7 +108,6 @@ if __name__ == "__main__":
     
     som = SOM(width, height, input_dim)
     som.train(in_data, epoch)
-    print(som.cluster);
     plt.imshow(som.cluster)
     plt.colorbar()
     plt.show()
