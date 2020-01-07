@@ -24,7 +24,9 @@ class SOM:
         bmu = None;
         # Update its neightbors' weights
         self.update_weight = self.update_neighbor(bmu=self.get_bmu())
-
+    """
+    Find best metric unit
+    """
     def get_bmu(self):
         # Finding the nearest distance with input
         distance = self.get_distance(self.input, self.weight)
@@ -33,7 +35,9 @@ class SOM:
         # Cast bmu_location
         bmu_location = tf.to_float([tf.div(bmu_index, self.width), tf.mod(bmu_index, self.width)])
         return bmu_location
-
+    """
+    Update neighbor around the best metric unit in squared pattern
+    """
     def update_neighbor(self, bmu):
 
         sigma = tf.to_float(tf.maximum(self.height, self.width) / 2)
@@ -56,7 +60,9 @@ class SOM:
         new_weight = tf.add(self.weight, delta_weight)
 
         return tf.assign(self.weight, new_weight)
-
+    """
+    Given 2 nodes find the euclidean distance between node_a and node_b
+    """
     def get_distance(self, node_a, node_b):
         #Euclidean Distance
         squared_diff = tf.square(node_a - node_b)
@@ -96,11 +102,23 @@ def get_processed_data(path_file):
     return PCA(n_components=3).fit_transform(data)
 
 """
-for local testing
+For unit testing
 """
 if __name__ == "__main__":
+    """
+    SOM model used is:
+    width: 9
+    height: 9
+    input_dim: 3
+
+    the actual SOM should consist of 27 * 27. Assuming "less, average, more" divides for each attribute, 
+    there are 3 type of data on each attribute, so the cluster must be at least 3 * 3 * 3, because there are 
+    3 attributes. After some iteration one attribute did not differ between any cluster while the remaining 
+    still differs in every cluster.
+
+    Then, there must be at least 9(ignoring one attribute) different type of cluster in the dataset
+    """
     in_data = get_processed_data("dataset/clustering.csv")
-    
     width = 9
     height = 9
     input_dim = 3
