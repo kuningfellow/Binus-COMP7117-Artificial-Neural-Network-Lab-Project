@@ -4,7 +4,6 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 import numpy as np
-
 class ANN:
     """
     Single instance of ANN
@@ -119,15 +118,6 @@ class DataSet:
         # Take 5 component as per project request
         self.pca = PCA(n_components=5).fit(self.in_data)
         self.in_data = self.pca.transform(self.in_data)
-
-
-data = DataSet()
-data.getData('dataset/classification.csv')
-data.performPCA()
-data.splitData()
-
-ann = ANN([5, 14, 7], ['', 'sigmoid', 'sigmoid'])
-ann.createTrain(0.5)
 """
 Considerations for our model
 We believe that the feature 'legs' has no ordinal meaning in determining an animal's class type
@@ -152,25 +142,36 @@ Output:
 The learning rate was set to 0.5 as a balance between faster minimum finding, and a low chance of overshooting
 """
 
-# 5000 epochs as per project request
-epoch = 5000
-prevLoss = 0
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    for i in range(epoch):
-        sess.run(ann.train, feed_dict={
-            ann.input: data.train_in_data,
-            ann.target: data.train_out_data
-        })
-        if i % 100 == 99:
-            curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.validation_in_data, ann.target: data.validation_out_data })
-            print("Epoch number {}, error = {}" . format( (i+1), curLoss ))
-            if i % 500 == 499:
-                # For every 500th epoch
-                if curLoss < prevLoss:
-                    # save model if better than pevious
-                    saver = tf.train.Saver()
-                    saver.save(sess, 'model/classification.cpkt')
-                # get new validation error
-                prevLoss = curLoss
-    print("Accuracy : {}" . format( sess.run(ann.accuracy,feed_dict={ann.input:data.test_in_data, ann.target:data.test_out_data })*100 ))
+"""
+For unit testing
+"""
+if __name__ == "__main__":
+    data = DataSet()
+    data.getData('dataset/classification.csv')
+    data.performPCA()
+    data.splitData()
+
+    ann = ANN([5, 14, 7], ['', 'sigmoid', 'sigmoid'])
+    ann.createTrain(0.5)
+    # 5000 epochs as per project request
+    epoch = 5000
+    prevLoss = 0
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        for i in range(epoch):
+            sess.run(ann.train, feed_dict={
+                ann.input: data.train_in_data,
+                ann.target: data.train_out_data
+            })
+            if i % 100 == 99:
+                curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.validation_in_data, ann.target: data.validation_out_data })
+                print("Epoch number {}, error = {}" . format( (i+1), curLoss ))
+                if i % 500 == 499:
+                    # For every 500th epoch
+                    if curLoss < prevLoss:
+                        # save model if better than pevious
+                        saver = tf.train.Saver()
+                        saver.save(sess, 'model/classification.cpkt')
+                    # get new validation error
+                    prevLoss = curLoss
+        print("Accuracy : {}" . format( sess.run(ann.accuracy,feed_dict={ann.input:data.test_in_data, ann.target:data.test_out_data })*100 ))

@@ -21,9 +21,9 @@ class SOM:
         self.weight = tf.Variable(tf.random_normal([self.num_node, self.input_dim]))
         self.input = tf.placeholder(tf.float32, [self.input_dim])
         self.location = [ tf.to_float([y, x]) for y in range(height) for x in range(width) ]
-        bmu = None;
+        bmu = self.get_bmu();
         # Update its neightbors' weights
-        self.update_weight = self.update_neighbor(bmu=self.get_bmu())
+        self.update_weight = self.update_neighbor(bmu)
     """
     Find best metric unit
     """
@@ -129,4 +129,3 @@ if __name__ == "__main__":
     plt.imshow(som.cluster)
     plt.colorbar()
     plt.show()
-    pass
