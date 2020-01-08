@@ -126,15 +126,17 @@ Therefore we went ahead and encoded that feature as a boolean feature vector usi
 Input:
     We need 5 input nodes because we used PCA taking 5 components as features
 Hidden:
-    The original dataset is a linearly separable data.
+    We are not sure if the problem is a linear problem or not.
     According to the Perceptron Theorem, if the dataset is linearly separable, then the perceptron learning rule will converge to weight vector that gives correct response for all training patters.
-    So constructed a perceptron. We then used all the data without PCA as the training, validation, and testing.
-    The training, validation, and testing all had 101 data entries and 17 features (11 from the requested features + 6 from expanding the 'legs' feature)
-    And after 50000 epochs and a high learning rate (10, just for the purpose of quickly finding the minimum), it converged to 99.00990128517151% accuracy.
-    We concluded that the dataset is linearly separable with it having 1 outlier. 100/101 * 100% = 99.009901%
+    Using 50000 epoch and 0.5 learning rate, we can consistently get all except 1 data correctly.
+    But using 200000 epoch and 0.01 learning rate, we sometimes get more than 1 data wrong.
+    If we always get all except 1 data correctly, we might consider that data as an outlier, so the problem could be linearly separable.
+    But testing results shows that convergence using a low learning rate is a hit and miss.
 
     HOWEVER, with the requirement that the dataset be PCA'd. The reduced dimension dataset became NONLINEAR based on the previous testing method.
-    Therefore we needed a hidden layer. Subsequent testing shows that there were no added benefits to using more than 1 hidden layer.
+    Even with 50000 epoch and 0.5 learning rate, we failed to produce the same result as before.
+    Therefore it is a nonlinear problem and we needed a hidden layer.
+    Subsequent testing shows that there were no added benefits to using more than 1 hidden layer.
     So we decided to just use one hidden layer.
 Output:
     We used 7 nodes for output because we believe that the classes has no ordinal relation and therefore should be considered as independent features.
@@ -155,7 +157,8 @@ if __name__ == "__main__":
     ann.createTrain(0.5)
     # 5000 epochs as per project request
     epoch = 5000
-    prevLoss = 0
+    validationLoss = -1
+    prevValidationLoss = -1
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for i in range(epoch):
@@ -163,15 +166,19 @@ if __name__ == "__main__":
                 ann.input: data.train_in_data,
                 ann.target: data.train_out_data
             })
+
             if i % 100 == 99:
-                curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.validation_in_data, ann.target: data.validation_out_data })
+                curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.train_in_data, ann.target: data.train_out_data })
                 print("Epoch number {}, error = {}" . format( (i+1), curLoss ))
-                if i % 500 == 499:
-                    # For every 500th epoch
-                    if curLoss < prevLoss:
-                        # save model if better than pevious
-                        saver = tf.train.Saver()
-                        saver.save(sess, 'model/classification.cpkt')
-                    # get new validation error
-                    prevLoss = curLoss
+
+            if i % 500 == 499:
+                # For every 500th epoch
+                validationLoss = sess.run(ann.loss, feed_dict={ ann.input: data.validation_in_data, ann.target: data.validation_out_data })
+                if i == 500 or validationLoss < prevValidationLoss:
+                    # save model if the first 500 or if better than pevious
+                    saver = tf.train.Saver()
+                    saver.save(sess, 'model/classification.cpkt')
+                # get new validation error
+                prevValidationLoss = validationLoss
+
         print("Accuracy : {}" . format( sess.run(ann.accuracy,feed_dict={ann.input:data.test_in_data, ann.target:data.test_out_data })*100 ))
