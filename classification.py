@@ -4,7 +4,6 @@ from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 import numpy as np
-
 class ANN:
     """
     Single instance of ANN
@@ -119,49 +118,67 @@ class DataSet:
         # Take 5 component as per project request
         self.pca = PCA(n_components=5).fit(self.in_data)
         self.in_data = self.pca.transform(self.in_data)
-
-
-data = DataSet()
-data.getData('dataset/classification.csv')
-data.performPCA()
-data.splitData()
-
-ann = ANN([5, 14, 7], ['', 'sigmoid', 'sigmoid'])
-ann.createTrain(0.5)
 """
 Considerations for our model
 We believe that the feature 'legs' has no ordinal meaning in determining an animal's class type
 Therefore we went ahead and encoded that feature as a boolean feature vector using OneHotEncoder
 
+Input:
+    We need 5 input nodes because we used PCA taking 5 components as features
+Hidden:
+    We are not sure if the problem is a linear problem or not.
+    According to the Perceptron Theorem, if the dataset is linearly separable, then the perceptron learning rule will converge to weight vector that gives correct response for all training patters.
+    Using 50000 epoch and 0.5 learning rate, we can consistently get all except 1 data correctly.
+    But using 200000 epoch and 0.01 learning rate, we sometimes get more than 1 data wrong.
+    If we always get all except 1 data correctly, we might consider that data as an outlier, so the problem could be linearly separable.
+    But testing results shows that convergence using a low learning rate is a hit and miss.
+
+    HOWEVER, with the requirement that the dataset be PCA'd. The reduced dimension dataset became NONLINEAR based on the previous testing method.
+    Even with 50000 epoch and 0.5 learning rate, we failed to produce the same result as before.
+    Therefore it is a nonlinear problem and we needed a hidden layer.
+    Subsequent testing shows that there were no added benefits to using more than 1 hidden layer.
+    So we decided to just use one hidden layer.
+Output:
+    We used 7 nodes for output because we believe that the classes has no ordinal relation and therefore should be considered as independent features.
+
 The learning rate was set to 0.5 as a balance between faster minimum finding, and a low chance of overshooting
 """
 
-# 5000 epochs as per project request
-epoch = 5000
-prevValidationLoss = -1
-validationLoss = 0
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    for i in range(epoch):
-        sess.run(ann.train, feed_dict={
-            ann.input: data.train_in_data,
-            ann.target: data.train_out_data
-        })
-        if i % 100 == 99:
-            curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.train_in_data, ann.target: data.train_out_data })
-            print("Epoch number {}, error = {}" . format( (i+1), curLoss ))
+"""
+For unit testing
+"""
+if __name__ == "__main__":
+    data = DataSet()
+    data.getData('dataset/classification.csv')
+    data.performPCA()
+    data.splitData()
+
+    ann = ANN([5, 14, 7], ['', 'sigmoid', 'sigmoid'])
+    ann.createTrain(0.5)
+    # 5000 epochs as per project request
+    epoch = 5000
+    validationLoss = -1
+    prevValidationLoss = -1
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        for i in range(epoch):
+            sess.run(ann.train, feed_dict={
+                ann.input: data.train_in_data,
+                ann.target: data.train_out_data
+            })
+
+            if i % 100 == 99:
+                curLoss = sess.run(ann.loss, feed_dict={ ann.input: data.train_in_data, ann.target: data.train_out_data })
+                print("Epoch number {}, error = {}" . format( (i+1), curLoss ))
+
             if i % 500 == 499:
                 # For every 500th epoch
                 validationLoss = sess.run(ann.loss, feed_dict={ ann.input: data.validation_in_data, ann.target: data.validation_out_data })
-                if prevValidationLoss < 0:
-                    # first 500
-                    prevValidationLoss = validationLoss + 1000
-                    # force save model
-
-                if validationLoss < prevValidationLoss:
-                    # save model if better than pevious
+                if i == 500 or validationLoss < prevValidationLoss:
+                    # save model if the first 500 or if better than pevious
                     saver = tf.train.Saver()
                     saver.save(sess, 'model/classification.cpkt')
                 # get new validation error
                 prevValidationLoss = validationLoss
-    print("Accuracy : {}" . format( sess.run(ann.accuracy,feed_dict={ann.input:data.test_in_data, ann.target:data.test_out_data })*100 ))
+
+        print("Accuracy : {}" . format( sess.run(ann.accuracy,feed_dict={ann.input:data.test_in_data, ann.target:data.test_out_data })*100 ))
